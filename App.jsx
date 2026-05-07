@@ -8,7 +8,7 @@ import Results from './Results.jsx'
 
 export default function App() {
   const [screen, setScreen] = useState('home')
-  const [sessionData, setSessionData] = useState(null)
+  const [sessionData, setSessionData] = useState(null) // { sessionId, teamName, memberName, role }
 
   function go(screen, data = {}) {
     setSessionData(prev => ({ ...prev, ...data }))

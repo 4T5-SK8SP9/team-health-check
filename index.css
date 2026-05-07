@@ -1,80 +1,88 @@
-import { db } from './firebase.js'
-import { ref, set, get, update, onValue, push, serverTimestamp } from 'firebase/database'
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-// Generate a readable 6-char session code
-export function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+:root {
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface2: #F0EEE9;
+  --border: #E2DDD6;
+  --text: #1A1916;
+  --text2: #6B6760;
+  --text3: #9C9890;
+  --accent: #2D6A4F;
+  --radius: 12px;
+  --radius-sm: 8px;
 }
 
-// Create a new session
-export async function createSession({ teamName, facilitatorName }) {
-  const code = generateCode()
-  const sessionRef = ref(db, `sessions/${code}`)
-  await set(sessionRef, {
-    teamName,
-    facilitator: facilitatorName,
-    status: 'lobby',       // lobby | voting | reveal | complete
-    currentQuestion: 0,
-    createdAt: serverTimestamp(),
-    members: {
-      [sanitizeName(facilitatorName)]: {
-        name: facilitatorName,
-        joinedAt: serverTimestamp()
-      }
-    }
-  })
-  return code
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-// Join a session
-export async function joinSession({ code, memberName }) {
-  const sessionRef = ref(db, `sessions/${code}`)
-  const snap = await get(sessionRef)
-  if (!snap.exists()) throw new Error('Session not found')
-  const session = snap.val()
-  if (session.status === 'complete') throw new Error('This session has already ended')
+input {
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: #888; }
 
-  const key = sanitizeName(memberName)
-  await update(ref(db, `sessions/${code}/members/${key}`), {
-    name: memberName,
-    joinedAt: serverTimestamp()
-  })
-  return session
+button { font-family: var(--font); cursor: pointer; }
+
+.btn-primary {
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 20px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.35; cursor: default; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  padding: 10px 18px;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--surface2); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
 }
 
-// Submit a vote
-export async function submitVote({ code, memberName, questionIndex, score }) {
-  const key = sanitizeName(memberName)
-  await update(ref(db, `sessions/${code}/votes/${questionIndex}/${key}`), {
-    score,
-    name: memberName,
-    submittedAt: serverTimestamp()
-  })
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
 }
 
-// Advance to next question (facilitator / auto)
-export async function advanceQuestion({ code, nextIndex, totalQuestions }) {
-  if (nextIndex >= totalQuestions) {
-    await update(ref(db, `sessions/${code}`), { status: 'complete', currentQuestion: nextIndex })
-  } else {
-    await update(ref(db, `sessions/${code}`), { currentQuestion: nextIndex, status: 'voting' })
-  }
-}
-
-// Start the session (move from lobby to voting)
-export async function startSession(code) {
-  await update(ref(db, `sessions/${code}`), { status: 'voting', currentQuestion: 0 })
-}
-
-// Listen to session changes
-export function listenSession(code, callback) {
-  const sessionRef = ref(db, `sessions/${code}`)
-  return onValue(sessionRef, snap => {
-    if (snap.exists()) callback(snap.val())
-  })
-}
-
-export function sanitizeName(name) {
-  return name.trim().toLowerCase().replace(/[^a-z0-9]/g, '_')
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
 }

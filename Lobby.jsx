@@ -1,74 +1,83 @@
-import { useState } from 'react'
-import { joinSession } from '../firebaseHelpers.js'
+import { useState, useEffect } from 'react'
+import { listenSession, startSession } from './firebaseHelpers.js'
 
-export default function JoinSession({ go }) {
-  const [code, setCode] = useState('')
-  const [memberName, setMemberName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export default function Lobby({ sessionData, go }) {
+  const { sessionId, teamName, memberName, role } = sessionData
+  const [session, setSession] = useState(null)
 
-  async function handleJoin() {
-    if (!code.trim() || !memberName.trim()) return
-    setLoading(true)
-    setError('')
-    try {
-      const session = await joinSession({ code: code.trim().toUpperCase(), memberName: memberName.trim() })
-      go('lobby', {
-        sessionId: code.trim().toUpperCase(),
-        teamName: session.teamName,
-        memberName: memberName.trim(),
-        role: 'member'
-      })
-    } catch (e) {
-      setError(e.message)
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    const unsub = listenSession(sessionId, data => {
+      setSession(data)
+      if (data.status === 'voting') {
+        go('voting')
+      }
+    })
+    return () => unsub()
+  }, [sessionId])
+
+  const members = session ? Object.values(session.members || {}) : []
+  const isFacilitator = role === 'facilitator'
 
   return (
     <div className="page" style={{ paddingTop: '2.5rem' }}>
-      <button onClick={() => go('home')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, padding: 0, marginBottom: '1.5rem' }}>
-        ← Back
-      </button>
-
-      <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Join a session</h2>
-      <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: '2rem' }}>
-        Enter the session code your facilitator shared with you.
-      </p>
-
-      <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '1.5rem' }}>
-        <div>
-          <label className="label">Session code</label>
-          <input
-            value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder="e.g. AB3X7K"
-            maxLength={6}
-            style={{ fontFamily: 'var(--mono)', fontSize: 22, letterSpacing: '0.15em', textAlign: 'center' }}
-            onKeyDown={e => e.key === 'Enter' && handleJoin()}
-          />
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div className="label" style={{ marginBottom: 8 }}>Session code</div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 42, fontWeight: 500, letterSpacing: '0.12em', color: 'var(--text)' }}>
+          {sessionId}
         </div>
-        <div>
-          <label className="label">Your name</label>
-          <input
-            value={memberName}
-            onChange={e => setMemberName(e.target.value)}
-            placeholder="e.g. Sarah"
-            onKeyDown={e => e.key === 'Enter' && handleJoin()}
-          />
+        <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 8 }}>
+          Share this code with your team
         </div>
       </div>
 
-      {error && <p style={{ fontSize: 13, color: '#B00020', marginBottom: '1rem' }}>{error}</p>}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 12 }}>
+          {members.length} {members.length === 1 ? 'person' : 'people'} in the lobby
+        </div>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {members.map((m, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 500, color: 'var(--text2)' }}>
+                {m.name?.[0]?.toUpperCase() || '?'}
+              </div>
+              <span style={{ fontSize: 14, color: 'var(--text)' }}>{m.name}</span>
+              {m.name === memberName && <span style={{ fontSize: 11, color: 'var(--text3)' }}>(you)</span>}
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <button
-        className="btn-primary"
-        onClick={handleJoin}
-        disabled={code.length < 4 || !memberName.trim() || loading}
-        style={{ width: '100%' }}
-      >
-        {loading ? 'Joining…' : 'Join session →'}
-      </button>
+      {isFacilitator ? (
+        <>
+          <button
+            className="btn-primary"
+            onClick={() => startSession(sessionId)}
+            disabled={members.length < 1}
+            style={{ width: '100%', marginBottom: 10 }}
+          >
+            Start assessment →
+          </button>
+          <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>
+            All members will move to voting simultaneously
+          </p>
+        </>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+          <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 6 }}>Waiting for facilitator to start…</div>
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text3)', animation: `pulse 1.4s ${i * 0.2}s infinite` }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   )
 }

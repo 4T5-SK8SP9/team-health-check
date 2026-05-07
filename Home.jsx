@@ -1,67 +1,46 @@
-import { useState } from 'react'
-import { createSession } from '../firebaseHelpers.js'
-
-export default function CreateSession({ go }) {
-  const [teamName, setTeamName] = useState('')
-  const [facilitatorName, setFacilitatorName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleCreate() {
-    if (!teamName.trim() || !facilitatorName.trim()) return
-    setLoading(true)
-    setError('')
-    try {
-      const code = await createSession({ teamName: teamName.trim(), facilitatorName: facilitatorName.trim() })
-      go('lobby', { sessionId: code, teamName: teamName.trim(), memberName: facilitatorName.trim(), role: 'facilitator' })
-    } catch (e) {
-      setError(e.message)
-      setLoading(false)
-    }
-  }
-
+export default function Home({ go }) {
   return (
-    <div className="page" style={{ paddingTop: '2.5rem' }}>
-      <button onClick={() => go('home')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, padding: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-        ← Back
-      </button>
-
-      <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Create a session</h2>
-      <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: '2rem', lineHeight: 1.5 }}>
-        You'll get a 6-character code to share with your team.
-      </p>
-
-      <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '1.5rem' }}>
-        <div>
-          <label className="label">Team name</label>
-          <input
-            value={teamName}
-            onChange={e => setTeamName(e.target.value)}
-            placeholder="e.g. Athena team"
-            onKeyDown={e => e.key === 'Enter' && handleCreate()}
-          />
+    <div className="page" style={{ paddingTop: '3rem' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.1em', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 12 }}>
+          Team Health Check
         </div>
-        <div>
-          <label className="label">Your name (facilitator)</label>
-          <input
-            value={facilitatorName}
-            onChange={e => setFacilitatorName(e.target.value)}
-            placeholder="e.g. Jacob"
-            onKeyDown={e => e.key === 'Enter' && handleCreate()}
-          />
-        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.25, marginBottom: 12 }}>
+          How healthy is your team?
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.65 }}>
+          24 questions across 4 dimensions. Everyone votes anonymously on their own device. 
+          Votes reveal only when the whole team has answered. Lowest score is final.
+        </p>
       </div>
 
-      {error && <p style={{ fontSize: 13, color: '#B00020', marginBottom: '1rem' }}>{error}</p>}
+      <div style={{ display: 'grid', gap: 10, marginBottom: '2rem' }}>
+        {[
+          { id: 'ts', label: 'Team Structure', n: 6, color: '#2D6A4F' },
+          { id: 'pf', label: 'Product Focus', n: 6, color: '#1B4F72' },
+          { id: 'tp', label: 'Team Process', n: 7, color: '#6B2D8B' },
+          { id: 'td', label: 'Technical Disciplines', n: 4, color: '#7D3C0A' },
+        ].map(c => (
+          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', borderLeft: `4px solid ${c.color}` }}>
+            <div style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{c.label}</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>{c.n} questions</div>
+          </div>
+        ))}
+      </div>
 
-      <button
-        className="btn-primary"
-        onClick={handleCreate}
-        disabled={!teamName.trim() || !facilitatorName.trim() || loading}
-        style={{ width: '100%' }}
-      >
-        {loading ? 'Creating…' : 'Create session →'}
-      </button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <button className="btn-primary" onClick={() => go('create')} style={{ width: '100%' }}>
+          Create session
+        </button>
+        <button className="btn-secondary" onClick={() => go('join')} style={{ width: '100%' }}>
+          Join session
+        </button>
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginTop: '1.5rem', lineHeight: 1.5 }}>
+        Facilitator creates a session and shares the code.<br />
+        Team members join on their own devices.
+      </p>
     </div>
   )
 }

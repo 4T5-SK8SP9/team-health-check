@@ -1,30 +1,15 @@
-import { useState } from 'react'
-import Home from './components/Home.jsx'
-import CreateSession from './components/CreateSession.jsx'
-import JoinSession from './components/JoinSession.jsx'
-import Lobby from './components/Lobby.jsx'
-import Voting from './components/Voting.jsx'
-import Results from './components/Results.jsx'
+import { initializeApp } from 'firebase/app'
+import { getDatabase } from 'firebase/database'
 
-export default function App() {
-  const [screen, setScreen] = useState('home')
-  const [sessionData, setSessionData] = useState(null) // { sessionId, teamName, memberName, role }
-
-  function go(screen, data = {}) {
-    setSessionData(prev => ({ ...prev, ...data }))
-    setScreen(screen)
-  }
-
-  const props = { sessionData, go }
-
-  return (
-    <>
-      {screen === 'home'    && <Home {...props} />}
-      {screen === 'create'  && <CreateSession {...props} />}
-      {screen === 'join'    && <JoinSession {...props} />}
-      {screen === 'lobby'   && <Lobby {...props} />}
-      {screen === 'voting'  && <Voting {...props} />}
-      {screen === 'results' && <Results {...props} />}
-    </>
-  )
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 }
+
+const app = initializeApp(firebaseConfig)
+export const db = getDatabase(app)
