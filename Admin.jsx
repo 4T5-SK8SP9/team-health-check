@@ -26,7 +26,7 @@ export default function Admin({ go }) {
   }, [])
 
   if (user === undefined) return <LoadingScreen />
-  if (!user || !adminStatus?.isAdmin) return <AdminLogin setUser={setUser} setAdminStatus={setAdminStatus} />
+  if (!user || !adminStatus?.isAdmin) return <AdminLogin setUser={setUser} setAdminStatus={setAdminStatus} go={go} />
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -67,7 +67,7 @@ function LoadingScreen() {
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-function AdminLogin({ setUser, setAdminStatus }) {
+function AdminLogin({ setUser, setAdminStatus, go }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState('login') // login | register
@@ -98,6 +98,7 @@ function AdminLogin({ setUser, setAdminStatus }) {
 
   return (
     <div className="page" style={{ paddingTop: '3rem', maxWidth: 400 }}>
+      <button onClick={() => go('home')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: '1.5rem' }}>← Back to app</button>
       <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 8 }}>Team Health Check</div>
       <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>{mode === 'login' ? 'Admin sign in' : 'Create first admin'}</h2>
       <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: '2rem', lineHeight: 1.5 }}>
